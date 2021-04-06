@@ -6,6 +6,7 @@
 #include <visit_struct/visit_struct.hpp>
 #include <visit_struct/visit_struct_intrusive.hpp>
 #include <magic_enum.hpp>
+#include <optional>
 
 
 #include "is_container.hpp"
@@ -26,14 +27,24 @@ std::ostream& operator << (std::ostream& out, const T& my_struct) {
     return out;
 }
 
-template<typename T, typename = std::enable_if_t<!visit_struct::traits::is_visitable<T>::value>, typename = std::enable_if_t<std::is_enum<T>::value>>
-std::ostream& operator << (std::ostream& out, const T& my_enum) {
-    out << magic_enum::enum_name(my_enum);
+#include <is_pointerable.hpp>
+
+template<typename T, typename = std::enable_if_t<!visit_struct::traits::is_visitable<T>::value>, typename = std::enable_if_t<is_pointerable<T>::value>>
+std::ostream& operator << (std::ostream& out, const T& my_struct) {
+    out << ((my_struct) ? *my_struct : "null");
     return out;
 }
 
+//template<typename T, typename = std::enable_if_t<!visit_struct::traits::is_visitable<T>::value>, typename = std::enable_if_t<std::is_enum<T>::value>>
+//std::ostream& operator << (std::ostream& out, const T& my_enum) {
+//    out << magic_enum::enum_name(my_enum);
+//    return out;
+//}
+
 template<typename T, typename = std::enable_if_t<!std::is_same<T, std::string>::value>, typename = std::enable_if_t<!std::is_enum<T>::value>, typename = std::enable_if_t<std::is_container<T>::value>>
 std::ostream& operator << (std::ostream& out, const T& my_container) {
+    if (my_container.size() == 0) return out << "[]";
+    for (size_t i = 0; i != Tabs; i++) out << "    ";
     out << "[";
     Tabs++;
     if (!my_container.empty()) out << std::endl;
@@ -43,6 +54,7 @@ std::ostream& operator << (std::ostream& out, const T& my_container) {
         out << value << ",\n";
     }
     Tabs--;
+    for (size_t i = 0; i != Tabs; i++) out << "    ";
     out << "]";
     return out;
 }

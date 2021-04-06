@@ -2,6 +2,7 @@
 
 #include <nlohmann/json.hpp>
 #include <visit_struct/visit_struct.hpp>
+#include <visit_struct/visit_struct_intrusive.hpp>
 #include "trycatch.hpp"
 
 #define VISIT_FROM_JSON \
@@ -9,7 +10,13 @@ template<typename T, typename = std::enable_if_t<visit_struct::traits::is_visita
 static void from_json(const nlohmann::json& j, T& p) {\
     visit_struct::for_each(p,\
         [&](const char* name, auto& value) {\
-            trycatch(j.at(name).get_to(value));\
+            try{\
+                j.at(name).get_to(value);\
+            }\
+            catch (...)\
+            {\
+                puts(name);\
+            }\
         });\
 }
 
